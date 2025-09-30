@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Червоне серце зі світінням</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="heart"></canvas>
+  <script>
+    const canvas = document.getElementById("heart");
+    const ctx = canvas.getContext("2d");
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    const points = [];
+    const heartPoints = [];
+    const numPoints = 1200;
+
+    function heartShape(t, scale = 12) {
+      const x = 16 * Math.pow(Math.sin(t), 3);
+      const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+      return { x: x * scale, y: -y * scale };
+    }
+
+    for (let i = 0; i < numPoints; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const h = heartShape(angle, 15 + Math.random() * 3);
+      heartPoints.push(h);
+      points.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        tx: 0,
+        ty: 0
+      });
+    }
+
+    function updateTargets() {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      heartPoints.forEach((h, i) => {
+        points[i].tx = cx + h.x;
+        points[i].ty = cy + h.y;
+      });
+    }
+    updateTargets();
+
+    let assembled = false;
+    let scalePulse = 1;
+    let pulseDir = 1;
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      let allClose = true;
+
+      points.forEach(p => {
+        p.x += (p.tx - p.x) * 0.05;
+        p.y += (p.ty - p.y) * 0.05;
+
+        if (Math.abs(p.x - p.tx) > 0.5 || Math.abs(p.y - p.ty) > 0.5) {
+          allClose = false;
+        }
+
+        // малюємо легке світіння
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,0,0,0.2)";
+        ctx.fill();
+
+        // малюємо основне червоне ядро
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "red";
+        ctx.fill();
+      });
+
+      if (allClose) assembled = true;
+
+      if (assembled) {
+        scalePulse += pulseDir * 0.001;
+        if (scalePulse > 1.02 || scalePulse < 0.98) {
+          pulseDir *= -1;
+        }
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(scalePulse, scalePulse);
+        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+        ctx.restore();
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
